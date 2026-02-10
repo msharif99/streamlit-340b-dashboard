@@ -113,13 +113,17 @@ VIEWER_USERS: dict = {
          "name": "Mikell",
          "doctors": ["Opam, Osafradu "],
      },
-     "elisha": {
+     "elisha@healthcaremarquis.com": {
          "name": "Elisha",
          "doctors": ["Blokh, Ilya", "Sanchez-Pena, Jose R.", "Goldman, Alan", "Tawil, Steve", "Jagdeo, Jared"],
      },
      "halmrose@gmail.com": {
          "name": "Hal M Rose",
          "doctors": ["Sylvain, Paul", "Becker, Gary Shawn"],
+     },
+     "ilhamalidada@gmail.com": {
+         "name": "Ilham Amanat",
+         "doctors": ["Morton, John D.", "Wallach, Carl", "Siu, Larry", "Tarangelo, Nicholas", "Rosen, Ellen", "Ertifan, Elias", "Sis, Larry", ],
      },
 
 }
