@@ -108,4 +108,18 @@ VIEWER_USERS: dict = {
     #     "name": "Jane Viewer",
     #     "doctors": ["Smith, John", "Jones, Mary"],
     # },
+    # Example (uncomment and edit to add a viewer):
+     "Mikell": {
+         "name": "Mikell",
+         "doctors": ["Opam, Osafradu "],
+     },
+     "elisha": {
+         "name": "Elisha",
+         "doctors": ["Blokh, Ilya", "Sanchez-Pena, Jose R.", "Goldman, Alan", "Tawil, Steve", "Jagdeo, Jared"],
+     },
+     "hal": {
+         "name": "Hal M Rose",
+         "doctors": ["Sylvain, Paul", "Becker, Gary Shawn"],
+     },
+
 }
