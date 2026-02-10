@@ -17,9 +17,11 @@ def _get_secret(key: str, default: str = "") -> str:
         return val
     try:
         import streamlit as st
-        return str(st.secrets.get(key, default))
+        if hasattr(st, "secrets") and key in st.secrets:
+            return str(st.secrets[key])
     except Exception:
-        return default
+        pass
+    return default
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
