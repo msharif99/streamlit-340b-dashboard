@@ -16,6 +16,7 @@ from config.settings import (
     SMTP_PASSWORD,
     SMTP_PORT,
     SMTP_USER,
+    VIEWER_USERS,
 )
 
 
@@ -34,6 +35,16 @@ def _resolve_user(email: str):
             "role": "bizdev",
             "name": info["name"],
             "bizdev_name": info["bizdev_name"],
+            "email": email_lower,
+        }
+
+    # Check viewer list (unofficial BizDev scoped to specific doctors)
+    if email_lower in VIEWER_USERS:
+        info = VIEWER_USERS[email_lower]
+        return {
+            "role": "viewer",
+            "name": info["name"],
+            "doctors": info["doctors"],
             "email": email_lower,
         }
 
