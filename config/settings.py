@@ -9,21 +9,6 @@ try:
 except ImportError:
     pass
 
-
-def _get_secret(key: str, default: str = "") -> str:
-    """Read a config value from env vars first, then Streamlit secrets."""
-    val = os.environ.get(key)
-    if val is not None:
-        return val
-    try:
-        import streamlit as st
-        if hasattr(st, "secrets") and key in st.secrets:
-            return str(st.secrets[key])
-    except Exception:
-        pass
-    return default
-
-
 BASE_DIR = Path(__file__).resolve().parents[1]
 
 DATA_DIR = BASE_DIR / "data_files"
@@ -35,41 +20,77 @@ START_DATE = pd.Timestamp("2025-01-01")
 SPRX_RATE = 0.30
 EST_PAID_PER_INFUSION = 37_500
 
-DOCTORS_SHEET_CSV = _get_secret(
+DOCTORS_SHEET_CSV = os.environ.get(
     "DOCTORS_SHEET_CSV",
-    "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/export?format=csv",
+    "https://docs.google.com/spreadsheets/d/"
+    "1JyxkS1T_GrkNm2O4EsgOhAqnWWjTA805VwFFZ3K2kUA"
+    "/export?format=csv",
 )
 
 PAGE_TITLE = "CFO Revenue & BizDev Dashboard"
 
 # ---------- Authentication ----------
 
-APP_PASSWORD = _get_secret("APP_PASSWORD", "changeme")
-DEBUG_SKIP_PASSWORD = _get_secret("DEBUG_SKIP_PASSWORD", "false").lower() == "true"
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "hudson340b")
+DEBUG_SKIP_PASSWORD = os.environ.get("DEBUG_SKIP_PASSWORD", "true").lower() == "true"
 
 # ---------- Login Email Notifications ----------
-LOGIN_EMAIL_ENABLED = _get_secret("LOGIN_EMAIL_ENABLED", "false").lower() == "true"
-SMTP_HOST = _get_secret("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(_get_secret("SMTP_PORT", "587"))
-SMTP_USER = _get_secret("SMTP_USER", "")
-SMTP_PASSWORD = _get_secret("SMTP_PASSWORD", "")
-LOGIN_NOTIFY_FROM = _get_secret("LOGIN_NOTIFY_FROM", "")
+LOGIN_EMAIL_ENABLED = os.environ.get("LOGIN_EMAIL_ENABLED", "true").lower() == "true"
+SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("SMTP_USER", "alerts340b@gmail.com")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "txqk bplq sfto aema")
+LOGIN_NOTIFY_FROM = os.environ.get("LOGIN_NOTIFY_FROM", "alerts340b@gmail.com")
 
 # ---------- Users ----------
 
 # Admins – full access to all data
-_admin_csv = _get_secret("ADMIN_EMAILS", "")
-ADMIN_EMAILS = [e.strip() for e in _admin_csv.split(",") if e.strip()]
+_admin_csv = os.environ.get("ADMIN_EMAILS", "")
+if _admin_csv:
+    ADMIN_EMAILS = [e.strip() for e in _admin_csv.split(",") if e.strip()]
+else:
+    ADMIN_EMAILS = [
+        "mo@ccrxpath.com",
+        "os@radciti.com",
+        "dzehner@hudsonregionalhospital.com",
+        "rhodie.smith@hudsonregionalhealth.com",
+        "ssaleem@hudsonregionalhospital.com",
+        "plapas@hudsonregionalhospital.com",
+        "sayeed@ccrxpath.com",
+    ]
 
 # BizDevs – scoped to their own doctors & scripts
-# Format: email:Display Name:BizDev Column Name|email2:Name2:Column2
-_bizdev_raw = _get_secret("BIZDEV_USERS", "")
-BIZDEV_USERS: dict = {}
-for entry in _bizdev_raw.split("|"):
-    parts = entry.strip().split(":")
-    if len(parts) == 3:
-        email, name, bizdev_name = parts
-        BIZDEV_USERS[email.strip().lower()] = {
-            "name": name.strip(),
-            "bizdev_name": bizdev_name.strip(),
-        }
+_bizdev_raw = os.environ.get("BIZDEV_USERS", "")
+if _bizdev_raw:
+    BIZDEV_USERS: dict = {}
+    for entry in _bizdev_raw.split("|"):
+        parts = entry.strip().split(":")
+        if len(parts) == 3:
+            email, name, bizdev_name = parts
+            BIZDEV_USERS[email.strip().lower()] = {
+                "name": name.strip(),
+                "bizdev_name": bizdev_name.strip(),
+            }
+else:
+    BIZDEV_USERS = {
+        "asiya.jaffe@hudsonregionalhealth.com": {
+            "name": "Asiya Jaffe",
+            "bizdev_name": "Jaffe, Asiya",
+        },
+        "amharper@hudsonregionalhospital.com": {
+            "name": "Amy Harper",
+            "bizdev_name": "Harper, Amy",
+        },
+        "aprilmary.holcomb@hudsonregionalhealth.com": {
+            "name": "Mary Holcomb",
+            "bizdev_name": "Holcomb, Mary",
+        },
+        "megan.callan@carepointhealth.org": {
+            "name": "Megan Callan",
+            "bizdev_name": "Callan, Megan",
+        },
+        "sayeed.shehab@hudsonregionalhealth.com": {
+            "name": "Sayeed Shehab",
+            "bizdev_name": "Shehab, Sayeed",
+        },
+    }

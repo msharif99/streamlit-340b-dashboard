@@ -1,4 +1,3 @@
-import os
 import smtplib
 import threading
 from datetime import datetime
@@ -20,64 +19,17 @@ from config.settings import (
 )
 
 
-def _runtime_secret(key: str, fallback):
-    """Read a secret at runtime — checks st.secrets (available on Streamlit
-    Cloud after the runtime starts) then falls back to the settings.py value."""
-    try:
-        if key in st.secrets:
-            val = str(st.secrets[key])
-            if val.lower() in ("true", "false"):
-                return val.lower() == "true"
-            return val
-    except Exception:
-        pass
-    return fallback
-
-
-def _get_admin_emails():
-    """Get admin emails, checking st.secrets at runtime."""
-    try:
-        if "ADMIN_EMAILS" in st.secrets:
-            raw = str(st.secrets["ADMIN_EMAILS"])
-            return [e.strip() for e in raw.split(",") if e.strip()]
-    except Exception:
-        pass
-    return ADMIN_EMAILS
-
-
-def _get_bizdev_users():
-    """Get bizdev users, checking st.secrets at runtime."""
-    try:
-        if "BIZDEV_USERS" in st.secrets:
-            raw = str(st.secrets["BIZDEV_USERS"])
-            users = {}
-            for entry in raw.split("|"):
-                parts = entry.strip().split(":")
-                if len(parts) == 3:
-                    email, name, bizdev_name = parts
-                    users[email.strip().lower()] = {
-                        "name": name.strip(),
-                        "bizdev_name": bizdev_name.strip(),
-                    }
-            return users
-    except Exception:
-        pass
-    return BIZDEV_USERS
-
-
 def _resolve_user(email: str):
     """Return a user dict if the email is authorised, else None."""
     email_lower = email.strip().lower()
 
-    # Check admin list (runtime)
-    admin_emails = _get_admin_emails()
-    if email_lower in (e.lower() for e in admin_emails):
+    # Check admin list
+    if email_lower in (e.lower() for e in ADMIN_EMAILS):
         return {"role": "admin", "name": "Admin", "email": email_lower}
 
-    # Check bizdev list (runtime)
-    bizdev_users = _get_bizdev_users()
-    if email_lower in bizdev_users:
-        info = bizdev_users[email_lower]
+    # Check bizdev list
+    if email_lower in BIZDEV_USERS:
+        info = BIZDEV_USERS[email_lower]
         return {
             "role": "bizdev",
             "name": info["name"],
@@ -131,13 +83,9 @@ def require_login():
 
     st.title("340B Dashboard Login")
 
-    # Read at runtime so Streamlit Cloud secrets are available
-    skip_pw = _runtime_secret("DEBUG_SKIP_PASSWORD", DEBUG_SKIP_PASSWORD)
-    app_pw = _runtime_secret("APP_PASSWORD", APP_PASSWORD)
-
     with st.form("login_form"):
         email = st.text_input("Email address")
-        if not skip_pw:
+        if not DEBUG_SKIP_PASSWORD:
             password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Log in")
 
@@ -145,7 +93,7 @@ def require_login():
         user = _resolve_user(email)
         if user is None:
             st.error("This email is not authorised to access the dashboard.")
-        elif not skip_pw and password != app_pw:
+        elif not DEBUG_SKIP_PASSWORD and password != APP_PASSWORD:
             st.error("Incorrect password.")
         else:
             st.session_state["authenticated"] = True
