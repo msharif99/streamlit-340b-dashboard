@@ -2,8 +2,8 @@
 .env
 .streamlit/secrets.toml
 
-# Data files (contain PHI)
-data_files/
+# Raw data backups (PHI has been stripped from committed files)
+# data_files/
 
 # Python
 __pycache__/
