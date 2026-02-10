@@ -117,7 +117,7 @@ VIEWER_USERS: dict = {
          "name": "Elisha",
          "doctors": ["Blokh, Ilya", "Sanchez-Pena, Jose R.", "Goldman, Alan", "Tawil, Steve", "Jagdeo, Jared"],
      },
-     "hal": {
+     "halmrose@gmail.com": {
          "name": "Hal M Rose",
          "doctors": ["Sylvain, Paul", "Becker, Gary Shawn"],
      },
