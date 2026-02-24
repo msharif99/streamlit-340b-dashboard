@@ -109,7 +109,7 @@ VIEWER_USERS: dict = {
      },
      "elisha@healthcaremarquis.com": {
          "name": "Elisha",
-         "doctors": ["Blokh, Ilya", "Sanchez-Pena, Jose R.", "Goldman, Alan", "Tawil, Steve", "Jagdeo, Jared"],
+         "doctors": ["Blokh, Ilya", "Sanchez-Pena, Jose R.", "Goldman, Alan", "Goldman, Alan Peter", "Tawil, Steve", "Jagdeo, Jared"],
      },
      "halmrose@gmail.com": {
          "name": "Hal M Rose",
