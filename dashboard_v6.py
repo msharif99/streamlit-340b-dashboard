@@ -90,8 +90,9 @@ START_DATE = pd.Timestamp("2025-01-01")
 SPRX_RATE = 0.30
 
 BASE_DIR = Path(__file__).resolve().parent
-CLAIMS_FILE = "claims_with_pricing_v3.csv"
-GOUT_EXCEL_FILE = "HUMC 340b Gout Payment Summary.xlsx"
+DATA_DIR = BASE_DIR / "data_files"
+CLAIMS_FILE = DATA_DIR / "claims_with_pricing_v3.csv"
+GOUT_EXCEL_FILE = DATA_DIR / "HUMC 340b Gout Payment Summary.xlsx"
 
 # =========================
 # LOAD CLAIMS DATA
@@ -249,7 +250,7 @@ today = pd.Timestamp.today().normalize()
 date_preset = st.sidebar.selectbox(
     "Quick Date Range",
     ["Last 7 Days", "Last 30 Days", "Last Quarter", "Last Year", "Custom"],
-    index=1
+    index=3
 )
 
 # -------------------------
