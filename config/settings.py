@@ -97,21 +97,15 @@ else:
 
 # Viewers – unofficial BizDevs scoped to specific doctors (by Prescriber Full Name)
 # Each viewer sees only claims from the doctors listed in their "doctors" list.
-# To add a viewer:
-#   "email@example.com": {
-#       "name": "Display Name",
-#       "doctors": ["LastName, FirstName", "LastName2, FirstName2"],
-#   },
 VIEWER_USERS: dict = {
     # Example (uncomment and edit to add a viewer):
     # "viewer@example.com": {
     #     "name": "Jane Viewer",
     #     "doctors": ["Smith, John", "Jones, Mary"],
     # },
-    # Example (uncomment and edit to add a viewer):
-     "Mikell": {
+     "Mikell Dashevsky": {
          "name": "Mikell",
-         "doctors": ["Opam, Osafradu "],
+         "doctors": ["Opam, Osafradin"],
      },
      "elisha@healthcaremarquis.com": {
          "name": "Elisha",
@@ -125,5 +119,17 @@ VIEWER_USERS: dict = {
          "name": "Ilham Amanat",
          "doctors": ["Morton, John D.", "Wallach, Carl", "Siu, Larry", "Tarangelo, Nicholas", "Rosen, Ellen", "Ertifan, Elias", "Sis, Larry", ],
      },
+     "donchiaone@gmail.com": {
+         "name": "Don Chiapetta",
+         "doctors": ["George, James",
+                    "Kornbluth, Arthur A.",
+                    "Legnani, Peter E.",
+                    "Wong, Danny",
+                    "Naymagon, Steven",
+                    "Frado, Laura Elizabeth",
+                    "Weiss, Anthony A."
+                ],
+     },
+
 
 }
