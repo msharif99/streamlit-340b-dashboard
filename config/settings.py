@@ -35,7 +35,7 @@ APP_PASSWORD = os.environ.get("APP_PASSWORD", "hudson340b")
 DEBUG_SKIP_PASSWORD = os.environ.get("DEBUG_SKIP_PASSWORD", "true").lower() == "true"
 
 # ---------- Login Email Notifications ----------
-LOGIN_EMAIL_ENABLED = os.environ.get("LOGIN_EMAIL_ENABLED", "true").lower() == "true"
+LOGIN_EMAIL_ENABLED = os.environ.get("LOGIN_EMAIL_ENABLED", "true").lower() == "false"
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER", "alerts340b@gmail.com")
@@ -113,6 +113,10 @@ VIEWER_USERS: dict = {
      },
      "halmrose@gmail.com": {
          "name": "Hal M Rose",
+         "doctors": ["Sylvain, Paul", "Becker, Gary Shawn"],
+     },
+     "rllangone@yahoo.com": {
+         "name": "Ralph Langone",
          "doctors": ["Sylvain, Paul", "Becker, Gary Shawn"],
      },
      "ilhamalidada@gmail.com": {
