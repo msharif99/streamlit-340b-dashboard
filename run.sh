@@ -36,7 +36,10 @@ if $COMMIT; then
             data_files/npi_cache.json \
             dashboard_v6.py \
             app.py \
-            config/settings.py
+            config/settings.py \
+            data_files/financial_analysis.py \
+            data/claims.py \
+            run.sh
 
     # Only commit if there are staged changes
     if git diff --cached --quiet; then
