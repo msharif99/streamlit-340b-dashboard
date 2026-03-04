@@ -47,7 +47,7 @@ st.caption(f"Logged in as: {user['name']} ({user['role']}) – {user['email']}")
 st.sidebar.markdown("## Navigation")
 page = st.sidebar.radio(
     "Page",
-    ["340B Dashboard", "Gout Program"],
+    ["340B Dashboard", "Financial Analysis", "Gout Program"],
     label_visibility="collapsed",
 )
 
@@ -718,6 +718,241 @@ if page == "340B Dashboard":
         data=output.getvalue(),
         file_name=f"revenue_summary_{start_dt.date()}_to_{end_dt.date()}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+# ============================================================
+#  FINANCIAL ANALYSIS PAGE
+# ============================================================
+elif page == "Financial Analysis":
+
+    st.markdown("## Financial Analysis — Month-by-Month Breakdown")
+
+    # --- Build monthly summary from date-filtered dataset ---
+    fa_df = df.copy()
+    fa_paid = fa_df[fa_df["Total Price Paid"] > 0]
+    fa_unpaid = fa_df[fa_df["Total Price Paid"] == 0]
+
+    fa_months = sorted(fa_df["Month"].unique())
+    fa_rows = []
+    for m in fa_months:
+        tp = fa_paid.loc[fa_paid["Month"] == m, "Total Price Paid"].sum()
+        b340 = fa_paid.loc[fa_paid["Month"] == m, "340B Value"].sum() if "340B Value" in fa_paid.columns else 0
+        spread = tp - b340
+        wac = fa_unpaid.loc[fa_unpaid["Month"] == m, "WAC Value"].sum() if "WAC Value" in fa_unpaid.columns else 0
+        fa_rows.append({"Month": m, "Total Price Paid": tp, "340B Value": b340, "Spread": spread, "WAC (Unfilled)": wac})
+
+    fa_summary = pd.DataFrame(fa_rows)
+
+    # Totals row
+    fa_totals = fa_summary[["Total Price Paid", "340B Value", "Spread", "WAC (Unfilled)"]].sum()
+
+    # Split 340B vs non-340B for clarity
+    fa_paid_340b = fa_paid[fa_paid.get("Inventory_Type", "340B") == "340B"] if "Inventory_Type" in fa_paid.columns else fa_paid
+    fa_340b_revenue = fa_paid_340b["Total Price Paid"].sum()
+    fa_non340b_revenue = fa_totals["Total Price Paid"] - fa_340b_revenue
+
+    # KPIs
+    fk1, fk2, fk3, fk4, fk5 = st.columns(5)
+    fk1.metric("Total Cash Collected (All)", f"${fa_totals['Total Price Paid']:,.0f}")
+    fk2.metric("340B Revenue", f"${fa_340b_revenue:,.0f}")
+    fk3.metric("340B Acquisition Cost", f"${fa_totals['340B Value']:,.0f}")
+    fk4.metric("Spread (Profit)", f"${fa_totals['Spread']:,.0f}")
+    fk5.metric("Unfilled WAC (Opportunity)", f"${fa_totals['WAC (Unfilled)']:,.0f}")
+
+    if fa_non340b_revenue > 0:
+        st.caption(
+            f"Total Cash includes **${fa_340b_revenue:,.0f}** from 340B inventory "
+            f"+ **${fa_non340b_revenue:,.0f}** from non-340B (regular Rx). "
+            f"The 340B Dashboard page shows only the 340B portion."
+        )
+
+    st.divider()
+
+    # ---- Monthly summary table ----
+    st.subheader("Monthly Financial Summary")
+
+    fa_display = fa_summary.copy()
+    for c in ["Total Price Paid", "340B Value", "Spread", "WAC (Unfilled)"]:
+        fa_display[c] = fa_display[c].map("${:,.0f}".format)
+    st.dataframe(fa_display, use_container_width=True, hide_index=True)
+
+    # ---- Stacked bar chart ----
+    fig_fa = go.Figure()
+    fig_fa.add_bar(
+        x=fa_summary["Month"], y=fa_summary["340B Value"],
+        name="340B Acquisition Cost", marker_color="#e74c3c",
+    )
+    fig_fa.add_bar(
+        x=fa_summary["Month"], y=fa_summary["Spread"],
+        name="Spread (Profit)", marker_color="#2ecc71",
+    )
+    fig_fa.add_scatter(
+        x=fa_summary["Month"], y=fa_summary["WAC (Unfilled)"],
+        mode="lines+markers", name="WAC Unfilled (Opportunity Cost)",
+        line=dict(color="#f39c12", width=3, dash="dot"),
+        yaxis="y2",
+    )
+    fig_fa.update_layout(
+        barmode="stack",
+        xaxis_title="Month",
+        yaxis_title="Paid Claims ($)",
+        yaxis_tickformat="$,.0f",
+        yaxis2=dict(title="WAC Unfilled ($)", overlaying="y", side="right", tickformat="$,.0f"),
+        legend=dict(orientation="h", y=-0.25),
+        height=450,
+    )
+    st.plotly_chart(fig_fa, use_container_width=True)
+
+    st.divider()
+
+    # =========================================================
+    # UNFILLED SCRIPTS BY RX PRIORITY (Past 3 Months, Deduplicated)
+    # =========================================================
+    st.subheader("Unfilled Scripts by Rx Priority (Past 3 Months)")
+    st.caption(
+        "Deduplicated: same patient + same drug + same month = counted once. "
+        "Sorted by WAC value to highlight biggest revenue recovery opportunities."
+    )
+
+    # Dedup unfilled — use df_scoped (all dates) for 3-month lookback
+    fa_unfilled_src = df_scoped[df_scoped["Total Price Paid"] == 0].copy()
+    fa_unpaid_dedup = (
+        fa_unfilled_src
+        .sort_values("WAC Value" if "WAC Value" in fa_unfilled_src.columns else "WAC Price", ascending=False)
+        .drop_duplicates(subset=["Patient Full Name", "Dispensed Drug", "Month"], keep="first")
+    )
+
+    dupes_removed = len(fa_unfilled_src) - len(fa_unpaid_dedup)
+    if dupes_removed > 0:
+        st.info(f"Removed **{dupes_removed}** duplicate entries (same patient + drug + month).")
+
+    # Filter to past 3 months from today
+    fa_cutoff = today - pd.DateOffset(months=3)
+    fa_recent = fa_unpaid_dedup[fa_unpaid_dedup["Date"] >= fa_cutoff].copy()
+    fa_recent["Rx Priority"] = fa_recent["Rx Priority"].fillna("Unknown")
+    fa_recent_months = sorted(fa_recent["Month"].unique())
+
+    if fa_recent.empty:
+        st.info("No unfilled scripts in the past 3 months.")
+    else:
+        # Summary KPIs
+        total_unfilled_scripts = len(fa_recent)
+        total_unfilled_wac = fa_recent["WAC Value"].sum() if "WAC Value" in fa_recent.columns else 0
+        uk1, uk2 = st.columns(2)
+        uk1.metric("Deduplicated Unfilled Scripts", f"{total_unfilled_scripts:,}")
+        uk2.metric("Total WAC at Risk", f"${total_unfilled_wac:,.0f}")
+
+        # Build pivot: scripts + WAC by reason by month
+        pivot_scripts = fa_recent.groupby(["Rx Priority", "Month"]).size().unstack(fill_value=0)
+        wac_col = "WAC Value" if "WAC Value" in fa_recent.columns else "WAC Price"
+        pivot_wac = fa_recent.groupby(["Rx Priority", "Month"])[wac_col].sum().unstack(fill_value=0)
+
+        # Build display dataframe
+        reason_rows = []
+        for reason in pivot_scripts.index:
+            row = {"Rx Priority": reason}
+            for m in fa_recent_months:
+                s = int(pivot_scripts.loc[reason, m]) if m in pivot_scripts.columns else 0
+                w = pivot_wac.loc[reason, m] if m in pivot_wac.columns else 0
+                row[f"{m} Scripts"] = s
+                row[f"{m} WAC"] = w
+            row["Total Scripts"] = int(pivot_scripts.loc[reason].sum())
+            row["Total WAC"] = float(pivot_wac.loc[reason].sum())
+            reason_rows.append(row)
+
+        reason_df = pd.DataFrame(reason_rows).sort_values("Total WAC", ascending=False)
+
+        # Display table with scripts and WAC
+        display_cols = ["Rx Priority"]
+        for m in fa_recent_months:
+            display_cols.extend([f"{m} Scripts", f"{m} WAC"])
+        display_cols.extend(["Total Scripts", "Total WAC"])
+
+        reason_display = reason_df[display_cols].copy()
+        for c in reason_display.columns:
+            if "WAC" in c:
+                reason_display[c] = reason_display[c].map("${:,.0f}".format)
+
+        st.dataframe(reason_display, use_container_width=True, hide_index=True, height=min(600, 40 + 35 * len(reason_display)))
+
+        # Horizontal bar chart: WAC by reason
+        top_reasons = reason_df.head(15)
+        fig_reasons = go.Figure()
+        fig_reasons.add_bar(
+            y=top_reasons["Rx Priority"],
+            x=top_reasons["Total WAC"],
+            orientation="h",
+            marker_color="#e74c3c",
+            text=top_reasons.apply(
+                lambda r: f"{int(r['Total Scripts'])} scripts — ${r['Total WAC']:,.0f}", axis=1
+            ),
+            textposition="outside",
+        )
+        fig_reasons.update_layout(
+            xaxis_title="WAC Value ($)",
+            xaxis_tickformat="$,.0f",
+            yaxis=dict(autorange="reversed"),
+            height=max(400, 35 * len(top_reasons)),
+            margin=dict(l=250, r=250, t=10, b=40),
+            showlegend=False,
+        )
+        st.plotly_chart(fig_reasons, use_container_width=True)
+
+        # Key observations
+        st.subheader("Key Observations")
+        top5 = reason_df.head(5)
+        for _, row in top5.iterrows():
+            pct_scripts = row["Total Scripts"] / total_unfilled_scripts * 100
+            pct_wac = row["Total WAC"] / total_unfilled_wac * 100 if total_unfilled_wac > 0 else 0
+            st.markdown(
+                f"- **{row['Rx Priority']}**: {int(row['Total Scripts'])} scripts "
+                f"({pct_scripts:.0f}% of volume) — **${row['Total WAC']:,.0f}** WAC "
+                f"({pct_wac:.0f}% of value)"
+            )
+
+        # Transfers vs actionable
+        transfer_reasons = {"Transfer", "Approved - Transfer"}
+        transfer_scripts = int(reason_df[reason_df["Rx Priority"].isin(transfer_reasons)]["Total Scripts"].sum())
+        transfer_wac = reason_df[reason_df["Rx Priority"].isin(transfer_reasons)]["Total WAC"].sum()
+        pa_scripts = int(reason_df[reason_df["Rx Priority"].str.contains("PA |PA$", regex=True, na=False)]["Total Scripts"].sum())
+        pa_wac = reason_df[reason_df["Rx Priority"].str.contains("PA |PA$", regex=True, na=False)]["Total WAC"].sum()
+
+        st.markdown("---")
+        st.markdown(
+            f"**Transfers** (Transfer + Approved Transfer): "
+            f"**{transfer_scripts}** scripts — **${transfer_wac:,.0f}** WAC leaving the pharmacy"
+        )
+        st.markdown(
+            f"**PA-Related** (PA Denied + MDO Initiate PA + Electronic PA): "
+            f"**{pa_scripts}** scripts — **${pa_wac:,.0f}** WAC tied up in prior auth"
+        )
+
+        # Download
+        st.download_button(
+            "Download Unfilled Analysis (CSV)",
+            data=reason_display.to_csv(index=False).encode(),
+            file_name="unfilled_by_reason_3mo.csv",
+            mime="text/csv",
+        )
+
+    st.divider()
+
+    # Download monthly summary
+    fa_export = fa_summary.copy()
+    totals_row = pd.DataFrame([{
+        "Month": "TOTAL",
+        "Total Price Paid": fa_totals["Total Price Paid"],
+        "340B Value": fa_totals["340B Value"],
+        "Spread": fa_totals["Spread"],
+        "WAC (Unfilled)": fa_totals["WAC (Unfilled)"],
+    }])
+    fa_export = pd.concat([fa_export, totals_row], ignore_index=True)
+    st.download_button(
+        "Download Monthly Financial Summary (CSV)",
+        data=fa_export.to_csv(index=False).encode(),
+        file_name="monthly_financial_summary.csv",
+        mime="text/csv",
     )
 
 

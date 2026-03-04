@@ -1342,5 +1342,53 @@
     "city": "BROOKLYN",
     "state": "NY",
     "zip": "11235"
+  },
+  "1306003025": {
+    "npi": "1306003025",
+    "name": "KESSLER, DANIEL",
+    "address": "PO BOX 551308",
+    "city": "JACKSONVILLE",
+    "state": "FL",
+    "zip": "32255"
+  },
+  "1083052351": {
+    "npi": "1083052351",
+    "name": "MINK, JONAH",
+    "address": "3400 SPRUCE ST",
+    "city": "PHILADELPHIA",
+    "state": "PA",
+    "zip": "19104"
+  },
+  "1144271461": {
+    "npi": "1144271461",
+    "name": "JOHNSTON, JANICE",
+    "address": "2020 N CENTRAL AVE STE 400",
+    "city": "PHOENIX",
+    "state": "AZ",
+    "zip": "85004"
+  },
+  "1588336481": {
+    "npi": "1588336481",
+    "name": "GREATHOUSE, ROBERT",
+    "address": "13430 N SCOTTSDALE RD STE 200",
+    "city": "SCOTTSDALE",
+    "state": "AZ",
+    "zip": "85254"
+  },
+  "1073802526": {
+    "npi": "1073802526",
+    "name": "CHIU, ALBERT",
+    "address": "825 NICOLLET MALL STE 300",
+    "city": "MINNEAPOLIS",
+    "state": "MN",
+    "zip": "55402"
+  },
+  "1649562877": {
+    "npi": "1649562877",
+    "name": "MAZUR, ERIK",
+    "address": "7900 FANNIN ST STE 4400",
+    "city": "HOUSTON",
+    "state": "TX",
+    "zip": "77054"
   }
 }
