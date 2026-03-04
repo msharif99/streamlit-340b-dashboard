@@ -23,7 +23,7 @@ def load_claims():
         df["Biz Dev Name"] = "Unknown"
     df["Biz Dev Name"] = df["Biz Dev Name"].fillna("Unknown").astype(str).str.strip()
 
-    for col in ["Total Price Paid", "WAC Price"]:
+    for col in ["Total Price Paid", "WAC Price", "340B Value", "WAC Value"]:
         if col in df.columns:
             df[col] = (
                 df[col]
