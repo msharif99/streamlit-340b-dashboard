@@ -17,7 +17,7 @@ CLAIMS_FILE = DATA_DIR / "claims_with_pricing_v3.csv"
 GOUT_FILE = DATA_DIR / "340 B.xlsx"
 
 PATIENT_TRACKER_FILE = Path(
-    os.environ.get("PATIENT_TRACKER_FILE", str(DATA_DIR / "CCRx Onboarding.xlsx"))
+    os.environ.get("PATIENT_TRACKER_FILE", str(DATA_DIR / "im2_tracker.csv"))
 )
 
 # Insight CCRX Report — falls back to data_files/ (committed to repo).

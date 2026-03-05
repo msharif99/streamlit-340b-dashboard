@@ -52,6 +52,14 @@ if $COMMIT; then
         echo "  ⚠ Insight source not found: $INSIGHT_SRC"
     fi
 
+    # Patient Tracker — de-identify IM2 sheet from ~/Downloads and save as CSV
+    TRACKER_SRC="$HOME/Downloads/CCRx Onboarding.xlsx"
+    if [ -f "$TRACKER_SRC" ]; then
+        python3 deidentify_tracker.py
+    else
+        echo "  ⚠ CCRx Onboarding.xlsx not found in ~/Downloads (skip patient tracker)"
+    fi
+
     echo ""
     echo "── Pulling latest from GitHub ──"
     git stash --include-untracked -q 2>/dev/null || true
@@ -65,7 +73,7 @@ if $COMMIT; then
     git add \
         "data_files/340 B.xlsx" \
         "data_files/Insight - CCRX Report All.xlsx" \
-        "data_files/CCRx Onboarding.xlsx" \
+        data_files/im2_tracker.csv \
         data_files/claims_with_pricing_v3.csv \
         "data_files/HUMC 340b Gout Payment Summary.xlsx" \
         app.py \
@@ -76,6 +84,7 @@ if $COMMIT; then
         data/insight.py \
         data/gout.py \
         data/patient_tracker.py \
+        deidentify_tracker.py \
         run.sh \
         .gitignore 2>/dev/null || true
 

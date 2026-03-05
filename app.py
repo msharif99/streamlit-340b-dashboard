@@ -1202,22 +1202,17 @@ elif page == "340b Insight Dashboard":
             st.info("No patient tracker records found for your assigned doctors.")
         else:
             # ── Filters row ──
-            t_col1, t_col2, t_col3 = st.columns([2, 2, 3])
-
-            sheet_opts = ["All"] + sorted(tracker_df["Sheet"].unique().tolist())
-            selected_sheet = t_col1.selectbox("Category", sheet_opts, key="tracker_sheet")
+            t_col1, t_col2 = st.columns([2, 3])
 
             status_opts = ["All"] + sorted(
                 [s for s in tracker_df["Status"].unique() if s], key=str.lower
             )
-            selected_status = t_col2.selectbox("Status", status_opts, key="tracker_status")
+            selected_status = t_col1.selectbox("Status", status_opts, key="tracker_status")
 
-            search = t_col3.text_input("Search (name / medication / notes)", key="tracker_search")
+            search = t_col2.text_input("Search (initials / medication / notes)", key="tracker_search")
 
             # Apply filters
             tdf = tracker_df.copy()
-            if selected_sheet != "All":
-                tdf = tdf[tdf["Sheet"] == selected_sheet]
             if selected_status != "All":
                 tdf = tdf[tdf["Status"] == selected_status]
             if search:
@@ -1232,7 +1227,7 @@ elif page == "340b Insight Dashboard":
 
             # ── Display columns ──
             display_cols = [
-                "Sheet", "Date", "Patient Name", "Medication", "Status",
+                "Date", "Patient Name", "Medication", "Status",
                 "Provider", "Insurance Type", "Tracking Number", "Insight Team Notes",
             ]
             display_cols = [c for c in display_cols if c in tdf.columns]
