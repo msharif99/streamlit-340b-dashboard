@@ -7,6 +7,7 @@ import streamlit as st
 
 from config.settings import (
     ADMIN_EMAILS,
+    ADMIN_PASSWORD,
     APP_PASSWORD,
     BIZDEV_USERS,
     DEBUG_SKIP_PASSWORD,
@@ -99,15 +100,14 @@ def require_login():
 
     with st.form("login_form"):
         email = st.text_input("Email address")
-        if not DEBUG_SKIP_PASSWORD:
-            password = st.text_input("Password", type="password")
+        password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Log in")
 
     if submitted:
         user = _resolve_user(email)
         if user is None:
             st.error("This email is not authorised to access the dashboard.")
-        elif not DEBUG_SKIP_PASSWORD and password != APP_PASSWORD:
+        elif user["role"] == "admin" and password != ADMIN_PASSWORD:
             st.error("Incorrect password.")
         else:
             st.session_state["authenticated"] = True

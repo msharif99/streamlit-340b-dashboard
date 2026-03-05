@@ -41,6 +41,7 @@ PAGE_TITLE = "CFO Revenue & BizDev Dashboard"
 # ---------- Authentication ----------
 
 APP_PASSWORD = os.environ.get("APP_PASSWORD", "hudson340b")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "7867")
 DEBUG_SKIP_PASSWORD = os.environ.get("DEBUG_SKIP_PASSWORD", "true").lower() == "true"
 
 # ---------- Login Email Notifications ----------
