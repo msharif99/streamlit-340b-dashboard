@@ -1175,10 +1175,47 @@ elif page == "340b Insight Dashboard":
 
     st.divider()
 
-    # ── Download ──
+    # ── Claim-Level Detail Table ──
+    st.subheader("Claim Detail")
+
+    i_col1, i_col2, i_col3 = st.columns([2, 2, 3])
+    doctor_opts = ["All"] + sorted(insight_df["Doctor"].unique().tolist())
+    sel_doctor = i_col1.selectbox("Doctor", doctor_opts, key="insight_doc_filter")
+    month_opts = ["All"] + month_order
+    sel_month = i_col2.selectbox("Month", month_opts, key="insight_month_filter")
+    drug_opts = ["All"] + sorted(insight_df["Drug"].dropna().unique().tolist())
+    sel_drug = i_col3.selectbox("Drug", drug_opts, key="insight_drug_filter")
+
+    detail_df = insight_df.copy()
+    if sel_doctor != "All":
+        detail_df = detail_df[detail_df["Doctor"] == sel_doctor]
+    if sel_month != "All":
+        detail_df = detail_df[detail_df["Month"] == sel_month]
+    if sel_drug != "All":
+        detail_df = detail_df[detail_df["Drug"] == sel_drug]
+
+    st.caption(f"{len(detail_df):,} claims")
+    st.dataframe(
+        detail_df[["Date", "Doctor", "Drug", "Inventory", "Qty",
+                   "Revenue", "Drug Cost", "Net Profit",
+                   "Primary Remit", "Secondary Remit", "Patient Paid"]]
+        .sort_values("Date", ascending=False),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Date": st.column_config.DateColumn("Date", format="MM/DD/YYYY"),
+            "Revenue":       st.column_config.NumberColumn("Revenue",    format="$%.2f"),
+            "Drug Cost":     st.column_config.NumberColumn("Drug Cost",  format="$%.2f"),
+            "Net Profit":    st.column_config.NumberColumn("Net Profit", format="$%.2f"),
+            "Primary Remit": st.column_config.NumberColumn("Primary",    format="$%.2f"),
+            "Secondary Remit": st.column_config.NumberColumn("Secondary", format="$%.2f"),
+            "Patient Paid":  st.column_config.NumberColumn("Pt Paid",    format="$%.2f"),
+        },
+    )
+
     st.download_button(
         "Download Insight Report (CSV)",
-        data=insight_df.to_csv(index=False).encode(),
+        data=detail_df.to_csv(index=False).encode(),
         file_name="insight_ccrx_report.csv",
         mime="text/csv",
     )
