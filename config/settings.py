@@ -16,18 +16,12 @@ DATA_DIR = BASE_DIR / "data_files"
 CLAIMS_FILE = DATA_DIR / "claims_with_pricing_v3.csv"
 GOUT_FILE = DATA_DIR / "340 B.xlsx"
 
-# Insight CCRX Report — macOS alias in data_files doesn't work as a symlink,
-# so we resolve via env var or fall back to the known absolute path.
+# Insight CCRX Report — falls back to data_files/ (committed to repo).
+# Override with INSIGHT_FILE env var if needed (e.g. local dev with Google Drive path).
 INSIGHT_FILE = Path(
     os.environ.get(
         "INSIGHT_FILE",
-        str(
-            Path.home()
-            / "Library/CloudStorage"
-            / "GoogleDrive-amanatirfan3@gmail.com"
-            / "My Drive/ThinkPad X1/340b/Operations/REPORTS"
-            / "Insight - CCRX Report All.xlsx"
-        ),
+        str(DATA_DIR / "Insight - CCRX Report All.xlsx"),
     )
 )
 
