@@ -72,11 +72,12 @@ else:
 # SIDEBAR – page selector + shared filters
 # =========================
 st.sidebar.markdown("## Navigation")
-_pages = ["340B Dashboard", "Financial Analysis"]
+_pages = ["340b HUMC Dashboard"]
+if _show_insight:
+    _pages.append("340b Insight Dashboard")
+_pages.append("Analysis")
 if _role == "admin":
     _pages.append("Gout Program")
-if _show_insight:
-    _pages.append("Insight Report")
 
 page = st.sidebar.radio(
     "Page",
@@ -157,7 +158,7 @@ daily_gout = daily_gout.loc[
 # ============================================================
 #  340B DASHBOARD PAGE
 # ============================================================
-if page == "340B Dashboard":
+if page == "340b HUMC Dashboard":
 
     st.markdown("## 340B Revenue & BizDev Dashboard")
 
@@ -757,7 +758,7 @@ if page == "340B Dashboard":
 # ============================================================
 #  FINANCIAL ANALYSIS PAGE
 # ============================================================
-elif page == "Financial Analysis":
+elif page == "Analysis":
 
     st.markdown("## Financial Analysis — Month-by-Month Breakdown")
 
@@ -1058,7 +1059,7 @@ elif page == "Gout Program":
 # ============================================================
 #  INSIGHT REPORT PAGE
 # ============================================================
-elif page == "Insight Report":
+elif page == "340b Insight Dashboard":
 
     st.markdown("## Insight Specialty Pharmacy — CCRX Report")
 

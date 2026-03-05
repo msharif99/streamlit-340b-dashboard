@@ -75,6 +75,10 @@ INSIGHT_BIZDEV_DOCTORS: dict = {
         "Sanchez, Randolph",
         "Adekunle, Adeoti",
         "Shah, Amol",
+        "Jagdeo, Jared",
+        "Sanchez-Pena, Jose R.",
+        "Blokh, Ilya",
+
     ],
     "asiya.jaffe@carepointhealth.org": [
         "Bodek, Daniel",
@@ -82,6 +86,10 @@ INSIGHT_BIZDEV_DOCTORS: dict = {
         "Sanchez, Randolph",
         "Adekunle, Adeoti",
         "Shah, Amol",
+        "Jagdeo, Jared",
+        "Sanchez-Pena, Jose R.",
+        "Blokh, Ilya",
+
     ],
 }
 
