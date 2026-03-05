@@ -14,6 +14,7 @@ from data.phi import make_phi_safe
 from data.geocode import geocode_zips
 from data.npi_lookup import lookup_doctor_locations
 from data.insight import load_insight, filter_insight_by_doctors
+from data.patient_tracker import load_patient_tracker, filter_tracker_by_doctors
 
 from utils.ui import safe_top_n_slider
 
@@ -52,6 +53,7 @@ st.caption(f"Logged in as: {user['name']} ({user['role']}) – {user['email']}")
 # so changes take effect immediately without requiring a logout.
 # =========================
 _insight_all = load_insight()
+_tracker_all = load_patient_tracker()
 _role = user["role"]
 _email = user["email"]
 
@@ -1180,3 +1182,68 @@ elif page == "340b Insight Dashboard":
         file_name="insight_ccrx_report.csv",
         mime="text/csv",
     )
+
+    # ============================================================
+    #  PATIENT TRACKER
+    # ============================================================
+    st.divider()
+    st.subheader("Patient Tracker")
+
+    if _tracker_all.empty:
+        st.info("Patient tracker file not available. Add CCRx Onboarding.xlsx to data_files/.")
+    else:
+        # Scope to user's doctors
+        if _role in ("viewer", "bizdev"):
+            tracker_df = filter_tracker_by_doctors(_tracker_all, _insight_doctor_list)
+        else:
+            tracker_df = _tracker_all.copy()
+
+        if tracker_df.empty:
+            st.info("No patient tracker records found for your assigned doctors.")
+        else:
+            # ── Filters row ──
+            t_col1, t_col2, t_col3 = st.columns([2, 2, 3])
+
+            sheet_opts = ["All"] + sorted(tracker_df["Sheet"].unique().tolist())
+            selected_sheet = t_col1.selectbox("Category", sheet_opts, key="tracker_sheet")
+
+            status_opts = ["All"] + sorted(
+                [s for s in tracker_df["Status"].unique() if s], key=str.lower
+            )
+            selected_status = t_col2.selectbox("Status", status_opts, key="tracker_status")
+
+            search = t_col3.text_input("Search (name / medication / notes)", key="tracker_search")
+
+            # Apply filters
+            tdf = tracker_df.copy()
+            if selected_sheet != "All":
+                tdf = tdf[tdf["Sheet"] == selected_sheet]
+            if selected_status != "All":
+                tdf = tdf[tdf["Status"] == selected_status]
+            if search:
+                mask = (
+                    tdf["Patient Name"].str.contains(search, case=False, na=False)
+                    | tdf["Medication"].str.contains(search, case=False, na=False)
+                    | tdf["Insight Team Notes"].str.contains(search, case=False, na=False)
+                )
+                tdf = tdf[mask]
+
+            st.caption(f"{len(tdf):,} patient record(s)")
+
+            # ── Display columns ──
+            display_cols = [
+                "Sheet", "Date", "Patient Name", "Medication", "Status",
+                "Provider", "Insurance Type", "Tracking Number", "Insight Team Notes",
+            ]
+            display_cols = [c for c in display_cols if c in tdf.columns]
+
+            st.dataframe(
+                tdf[display_cols].sort_values("Date", ascending=False, na_position="last"),
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Date": st.column_config.DateColumn("Date", format="MM/DD/YYYY"),
+                    "Insight Team Notes": st.column_config.TextColumn("Notes", width="large"),
+                    "Insurance Type": st.column_config.TextColumn("Insurance", width="medium"),
+                },
+            )

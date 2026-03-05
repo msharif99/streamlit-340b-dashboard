@@ -65,6 +65,7 @@ if $COMMIT; then
     git add \
         "data_files/340 B.xlsx" \
         "data_files/Insight - CCRX Report All.xlsx" \
+        "data_files/CCRx Onboarding.xlsx" \
         data_files/claims_with_pricing_v3.csv \
         "data_files/HUMC 340b Gout Payment Summary.xlsx" \
         app.py \
@@ -74,6 +75,7 @@ if $COMMIT; then
         data/claims.py \
         data/insight.py \
         data/gout.py \
+        data/patient_tracker.py \
         run.sh \
         .gitignore 2>/dev/null || true
 
