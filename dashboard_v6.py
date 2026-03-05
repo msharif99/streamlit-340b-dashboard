@@ -92,7 +92,7 @@ SPRX_RATE = 0.30
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data_files"
 CLAIMS_FILE = DATA_DIR / "claims_with_pricing_v3.csv"
-GOUT_EXCEL_FILE = DATA_DIR / "HUMC 340b Gout Payment Summary.xlsx"
+GOUT_EXCEL_FILE = DATA_DIR / "340 B.xlsx"
 
 # =========================
 # LOAD CLAIMS DATA
@@ -152,14 +152,13 @@ def load_claims():
 # =========================
 @st.cache_data
 def load_gout_excel():
-    df = pd.read_excel(GOUT_EXCEL_FILE)
+    df = pd.read_excel(GOUT_EXCEL_FILE, sheet_name="340 B")
     df.columns = df.columns.str.strip()
 
     df = df.rename(columns={
-        "Created On": "Last Service Date",
-        "Total Paid": "Paid Amount",
-        "# of Infusions": "Infusions",
-        "SPRX Paid": "SPRX Paid"
+        "Service Date": "Last Service Date",
+        "Reimbursement": "Paid Amount",
+        "Number of Infusions": "Infusions",
     })
 
     # Guarantee required columns
@@ -171,7 +170,38 @@ def load_gout_excel():
         if col not in df.columns:
             df[col] = default
 
-    df["Last Service Date"] = pd.to_datetime(df["Last Service Date"], errors="coerce")
+    # Drop summary/blank rows (no patient name)
+    df = df[df["Patient"].notna()].copy()
+
+    # Parse date ranges and multi-date strings, fall back to Paid Date
+    def parse_date(val):
+        s = str(val).strip()
+        if s in ("nan", "NaT", ""):
+            return pd.NaT
+        result = pd.to_datetime(s, errors="coerce")
+        if pd.notna(result):
+            return result
+        # Range like "5/15/2025-5/31/2025" → take end date
+        if "/" in s and "-" in s:
+            end = s.rsplit("-", 1)[-1].strip()
+            result = pd.to_datetime(end, errors="coerce")
+            if pd.notna(result):
+                return result
+        # Space-separated like "7/1/2025 7/15 7/29" → infer year from first, use last
+        if " " in s:
+            parts = s.split()
+            first_dt = pd.to_datetime(parts[0], errors="coerce")
+            if pd.notna(first_dt) and str(first_dt.year) in parts[0]:
+                result = pd.to_datetime(f"{parts[-1]}/{first_dt.year}", errors="coerce")
+                if pd.notna(result):
+                    return result
+        return pd.NaT
+
+    df["Last Service Date"] = df["Last Service Date"].apply(parse_date)
+    # Fall back to Paid Date where Service Date couldn't be parsed
+    if "Paid Date" in df.columns:
+        fallback = df["Last Service Date"].isna()
+        df.loc[fallback, "Last Service Date"] = pd.to_datetime(df.loc[fallback, "Paid Date"], errors="coerce")
 
     for col in ["Paid Amount", "SPRX Paid"]:
         df[col] = (

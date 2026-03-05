@@ -14,7 +14,22 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data_files"
 
 CLAIMS_FILE = DATA_DIR / "claims_with_pricing_v3.csv"
-GOUT_FILE = DATA_DIR / "HUMC 340b Gout Payment Summary.xlsx"
+GOUT_FILE = DATA_DIR / "340 B.xlsx"
+
+# Insight CCRX Report — macOS alias in data_files doesn't work as a symlink,
+# so we resolve via env var or fall back to the known absolute path.
+INSIGHT_FILE = Path(
+    os.environ.get(
+        "INSIGHT_FILE",
+        str(
+            Path.home()
+            / "Library/CloudStorage"
+            / "GoogleDrive-amanatirfan3@gmail.com"
+            / "My Drive/ThinkPad X1/340b/Operations/REPORTS"
+            / "Insight - CCRX Report All.xlsx"
+        ),
+    )
+)
 
 START_DATE = pd.Timestamp("2025-01-01")
 SPRX_RATE = 0.30
@@ -43,6 +58,32 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "txqk bplq sfto aema")
 LOGIN_NOTIFY_FROM = os.environ.get("LOGIN_NOTIFY_FROM", "alerts340b@gmail.com")
 
 # ---------- Users ----------
+
+# Admins with Insight Report access (subset of ADMIN_EMAILS)
+INSIGHT_ADMIN_EMAILS = [
+    "mo@ccrxpath.com",
+    "os@radciti.com",
+]
+
+# Insight doctor assignments for BizDev users.
+# Kept separate from BIZDEV_USERS so it is never overridden by the BIZDEV_USERS env var.
+# Key = lowercase email, Value = list of doctor names (Last, First format).
+INSIGHT_BIZDEV_DOCTORS: dict = {
+    "asiya.jaffe@hudsonregionalhealth.com": [
+        "Bodek, Daniel",
+        "Brandt, Frederick",
+        "Sanchez, Randolph",
+        "Adekunle, Adeoti",
+        "Shah, Amol",
+    ],
+    "asiya.jaffe@carepointhealth.org": [
+        "Bodek, Daniel",
+        "Brandt, Frederick",
+        "Sanchez, Randolph",
+        "Adekunle, Adeoti",
+        "Shah, Amol",
+    ],
+}
 
 # Admins – full access to all data
 _admin_csv = os.environ.get("ADMIN_EMAILS", "")
@@ -74,6 +115,10 @@ if _bizdev_raw:
 else:
     BIZDEV_USERS = {
         "asiya.jaffe@hudsonregionalhealth.com": {
+            "name": "Asiya Jaffe",
+            "bizdev_name": "Jaffe, Asiya",
+        },
+        "asiya.jaffe@carepointhealth.org": {
             "name": "Asiya Jaffe",
             "bizdev_name": "Jaffe, Asiya",
         },
@@ -109,15 +154,15 @@ VIEWER_USERS: dict = {
      },
      "elisha@healthcaremarquis.com": {
          "name": "Elisha",
-         "doctors": ["Blokh, Ilya", "Sanchez-Pena, Jose R.", "Goldman, Alan", "Goldman, Alan Peter", "Tawil, Steve", "Tawil, Steven Chahoud", "Jagdeo, Jared"],
+         "doctors": ["Blokh, Ilya", "Sanchez-Pena, Jose R.", "Goldman, Alan", "Goldman, Alan Peter", "Goldman, Alan", "Tawil, Steve", "Tawil, Steven Chahoud", "Jagdeo, Jared"],
      },
      "halmrose@gmail.com": {
          "name": "Hal M Rose",
-         "doctors": ["Sylvain, Paul", "Becker, Gary Shawn"],
+         "doctors": ["Sylvain, Paul", "Becker, Gary Shawn", "Becker, Gary", "Becker, Marvin"],
      },
      "rllangone@yahoo.com": {
          "name": "Ralph Langone",
-         "doctors": ["Sylvain, Paul", "Becker, Gary Shawn"],
+         "doctors": ["Sylvain, Paul", "Becker, Gary Shawn", "Becker, Gary", "Becker, Marvin"],
      },
      "ilhamalidada@gmail.com": {
          "name": "Ilham Amanat",

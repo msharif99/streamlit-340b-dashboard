@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from io import BytesIO
 
 from auth.auth import require_login, logout_button
-from config.settings import PAGE_TITLE, SPRX_RATE, EST_PAID_PER_INFUSION
+from config.settings import PAGE_TITLE, SPRX_RATE, EST_PAID_PER_INFUSION, INSIGHT_ADMIN_EMAILS, INSIGHT_BIZDEV_DOCTORS, VIEWER_USERS
 from data.claims import load_claims
 from data.gout import load_gout
 from data.doctors import load_doctors
@@ -13,6 +13,7 @@ from data.filters import apply_user_scope, apply_claims_scope
 from data.phi import make_phi_safe
 from data.geocode import geocode_zips
 from data.npi_lookup import lookup_doctor_locations
+from data.insight import load_insight, filter_insight_by_doctors
 
 from utils.ui import safe_top_n_slider
 
@@ -42,12 +43,42 @@ st.markdown("# Hudson Regional Hospital")
 st.caption(f"Logged in as: {user['name']} ({user['role']}) – {user['email']}")
 
 # =========================
+# INSIGHT PAGE ACCESS CHECK
+# Admins: only those in INSIGHT_ADMIN_EMAILS
+# BizDev: only if they have a doctors list assigned AND at least one matches Insight
+# Viewer: only if at least one of their doctors matches Insight
+#
+# Doctor list is always re-resolved from current settings (not session state)
+# so changes take effect immediately without requiring a logout.
+# =========================
+_insight_all = load_insight()
+_role = user["role"]
+_email = user["email"]
+
+if _role == "admin":
+    _show_insight = _email in (e.lower() for e in INSIGHT_ADMIN_EMAILS)
+    _insight_doctor_list = []  # admins see all
+elif _role == "bizdev":
+    _insight_doctor_list = INSIGHT_BIZDEV_DOCTORS.get(_email, [])
+    _show_insight = bool(_insight_doctor_list) and not filter_insight_by_doctors(_insight_all, _insight_doctor_list).empty
+elif _role == "viewer":
+    _insight_doctor_list = VIEWER_USERS.get(_email, {}).get("doctors", [])
+    _show_insight = bool(_insight_doctor_list) and not filter_insight_by_doctors(_insight_all, _insight_doctor_list).empty
+else:
+    _insight_doctor_list = []
+    _show_insight = False
+
+# =========================
 # SIDEBAR – page selector + shared filters
 # =========================
 st.sidebar.markdown("## Navigation")
+_pages = ["340B Dashboard", "Financial Analysis", "Gout Program"]
+if _show_insight:
+    _pages.append("Insight Report")
+
 page = st.sidebar.radio(
     "Page",
-    ["340B Dashboard", "Financial Analysis", "Gout Program"],
+    _pages,
     label_visibility="collapsed",
 )
 
@@ -1020,3 +1051,129 @@ elif page == "Gout Program":
     fig.add_bar(x=gout_monthly["Month"], y=gout_monthly["Monthly Cash"], name="Gout Cash")
     fig.update_layout(xaxis_title="Month", yaxis_title="Cash ($)", yaxis_tickformat="$,.0f")
     st.plotly_chart(fig, use_container_width=True)
+
+
+# ============================================================
+#  INSIGHT REPORT PAGE
+# ============================================================
+elif page == "Insight Report":
+
+    st.markdown("## Insight Specialty Pharmacy — CCRX Report")
+
+    # _insight_all already loaded at startup (cached); reuse it here
+    if _insight_all.empty:
+        st.error(
+            "Insight report data is not available. "
+            "Check that the file path is correct (set INSIGHT_FILE env var if needed)."
+        )
+        st.stop()
+
+    # ── Scope data to user's doctor list (viewer / bizdev with doctors) or show all (admin) ──
+    if _role in ("viewer", "bizdev"):
+        insight_df = filter_insight_by_doctors(_insight_all, _insight_doctor_list)
+        st.caption(f"Showing data for your {len(_insight_doctor_list)} assigned doctor(s).")
+    else:
+        insight_df = _insight_all
+
+    # ── Chronological month order ──
+    month_order = sorted(insight_df["Month"].dropna().unique().tolist())
+
+    # ── Aggregate by Doctor + Month (each row in source = 1 script/claim) ──
+    summary = (
+        insight_df.groupby(["Doctor", "Month"], as_index=False)
+        .agg(
+            Scripts=("Doctor", "count"),
+            Revenue=("Revenue", "sum"),
+            Drug_Cost=("Drug Cost", "sum"),
+        )
+    )
+    # Net Profit computed here — source column is unreliable (mostly $0)
+    summary["Net_Profit"] = summary["Revenue"] - summary["Drug_Cost"]
+
+    # ── KPIs ──
+    total_scripts = int(summary["Scripts"].sum())
+    total_revenue = summary["Revenue"].sum()
+    total_drug_cost = summary["Drug_Cost"].sum()
+    total_profit = summary["Net_Profit"].sum()
+    num_doctors = insight_df["Doctor"].nunique()
+
+    k1, k2, k3, k4, k5 = st.columns(5)
+    k1.metric("Doctors", f"{num_doctors:,}")
+    k2.metric("Total Scripts", f"{total_scripts:,}")
+    k3.metric("Total Revenue", f"${total_revenue:,.0f}")
+    k4.metric("Total Drug Cost", f"${total_drug_cost:,.0f}")
+    k5.metric("Net Profit", f"${total_profit:,.0f}")
+
+    st.divider()
+
+    # ── Scripts pivot: rows = Doctor, columns = Month ──
+    st.subheader("Scripts per Month")
+    pivot_scripts = (
+        summary.pivot_table(index="Doctor", columns="Month", values="Scripts", aggfunc="sum", fill_value=0)
+        .reindex(columns=month_order, fill_value=0)
+    )
+    pivot_scripts["Total"] = pivot_scripts.sum(axis=1)
+    pivot_scripts = pivot_scripts.sort_values("Total", ascending=False)
+    st.dataframe(pivot_scripts, use_container_width=True)
+
+    st.divider()
+
+    # ── Revenue pivot: rows = Doctor, columns = Month ──
+    st.subheader("Revenue per Month ($)")
+    pivot_rev = (
+        summary.pivot_table(index="Doctor", columns="Month", values="Revenue", aggfunc="sum", fill_value=0)
+        .reindex(columns=month_order, fill_value=0)
+    )
+    pivot_rev["Total"] = pivot_rev.sum(axis=1)
+    pivot_rev = pivot_rev.sort_values("Total", ascending=False)
+
+    pivot_rev_display = pivot_rev.copy()
+    for col in pivot_rev_display.columns:
+        pivot_rev_display[col] = pivot_rev_display[col].apply(lambda x: f"${x:,.0f}")
+    st.dataframe(pivot_rev_display, use_container_width=True)
+
+    st.divider()
+
+    # ── Revenue bar chart by doctor ──
+    st.subheader("Total Revenue by Doctor")
+    rev_by_doc = (
+        summary.groupby("Doctor", as_index=False)
+        .agg(Scripts=("Scripts", "sum"), Revenue=("Revenue", "sum"), Drug_Cost=("Drug_Cost", "sum"), Net_Profit=("Net_Profit", "sum"))
+        .sort_values("Revenue", ascending=False)
+    )
+
+    fig_insight = go.Figure()
+    fig_insight.add_bar(
+        y=rev_by_doc["Doctor"],
+        x=rev_by_doc["Revenue"],
+        orientation="h",
+        name="Revenue",
+        text=rev_by_doc["Revenue"].apply(lambda x: f"${x:,.0f}"),
+        textposition="outside",
+    )
+    fig_insight.add_bar(
+        y=rev_by_doc["Doctor"],
+        x=rev_by_doc["Drug_Cost"],
+        orientation="h",
+        name="Drug Cost",
+        marker=dict(opacity=0.6),
+    )
+    fig_insight.update_layout(
+        barmode="overlay",
+        xaxis_title="Amount ($)",
+        xaxis_tickformat="$,.0f",
+        height=max(400, 28 * len(rev_by_doc)),
+        margin=dict(l=160, r=200, t=30, b=40),
+        legend=dict(orientation="h", y=-0.15),
+    )
+    st.plotly_chart(fig_insight, use_container_width=True)
+
+    st.divider()
+
+    # ── Download ──
+    st.download_button(
+        "Download Insight Report (CSV)",
+        data=insight_df.to_csv(index=False).encode(),
+        file_name="insight_ccrx_report.csv",
+        mime="text/csv",
+    )

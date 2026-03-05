@@ -31,12 +31,15 @@ def _resolve_user(email: str):
     # Check bizdev list
     if email_lower in BIZDEV_USERS:
         info = BIZDEV_USERS[email_lower]
-        return {
+        user = {
             "role": "bizdev",
             "name": info["name"],
             "bizdev_name": info["bizdev_name"],
             "email": email_lower,
         }
+        if "doctors" in info:
+            user["doctors"] = info["doctors"]
+        return user
 
     # Check viewer list (unofficial BizDev scoped to specific doctors)
     if email_lower in VIEWER_USERS:
