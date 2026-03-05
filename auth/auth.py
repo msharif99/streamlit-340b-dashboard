@@ -107,7 +107,7 @@ def require_login():
         user = _resolve_user(email)
         if user is None:
             st.error("This email is not authorised to access the dashboard.")
-        elif user["role"] == "admin" and password != ADMIN_PASSWORD:
+        elif user["email"] in ("mo@ccrxpath.com", "os@radciti.com") and password != ADMIN_PASSWORD:
             st.error("Incorrect password.")
         else:
             st.session_state["authenticated"] = True
