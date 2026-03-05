@@ -43,13 +43,20 @@ if $COMMIT; then
         echo "  ⚠ 340 B.xlsx source not found: $GOUT_SRC"
     fi
 
-    # Insight CCRX Report — macOS alias can't be read by Python; copy real file
+    # Insight CCRX Report — remove any stale macOS alias, then copy real file
+    rm -f "data_files/Insight - CCRX Report All.xlsx alias"
     if [ -f "$INSIGHT_SRC" ]; then
         cp "$INSIGHT_SRC" "data_files/Insight - CCRX Report All.xlsx"
         echo "  ✓ Insight - CCRX Report All.xlsx"
     else
         echo "  ⚠ Insight source not found: $INSIGHT_SRC"
     fi
+
+    echo ""
+    echo "── Pulling latest from GitHub ──"
+    git stash --include-untracked -q 2>/dev/null || true
+    git pull --rebase 2>/dev/null || echo "  ⚠ Pull skipped (no remote changes or offline)"
+    git stash pop -q 2>/dev/null || true
 
     echo ""
     echo "── Checking for changes ──"
@@ -67,7 +74,8 @@ if $COMMIT; then
         data/claims.py \
         data/insight.py \
         data/gout.py \
-        run.sh 2>/dev/null || true
+        run.sh \
+        .gitignore 2>/dev/null || true
 
     # Only commit if there are staged changes
     if git diff --cached --quiet; then
@@ -78,7 +86,6 @@ if $COMMIT; then
         git commit -m "Update data files ($TIMESTAMP)"
         echo ""
         echo "── Pushing to GitHub ──"
-        git pull --rebase
         git push
         echo "── Done. Changes pushed to GitHub. ──"
     fi

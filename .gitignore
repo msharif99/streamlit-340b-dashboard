@@ -19,6 +19,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+# macOS alias files (use run.sh --commit to copy real Excel files instead)
+*.alias
 
 # Claude Code
 .claude/
