@@ -72,7 +72,9 @@ else:
 # SIDEBAR – page selector + shared filters
 # =========================
 st.sidebar.markdown("## Navigation")
-_pages = ["340B Dashboard", "Financial Analysis", "Gout Program"]
+_pages = ["340B Dashboard", "Financial Analysis"]
+if _role == "admin":
+    _pages.append("Gout Program")
 if _show_insight:
     _pages.append("Insight Report")
 
