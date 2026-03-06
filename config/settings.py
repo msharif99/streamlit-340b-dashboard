@@ -124,10 +124,12 @@ else:
         "asiya.jaffe@hudsonregionalhealth.com": {
             "name": "Asiya Jaffe",
             "bizdev_name": "Jaffe, Asiya",
+            "doctors": ["Sanchez-Pena, Jose R.", "Blokh, Ilya", "Jagdeo, Jared"],
         },
         "asiya.jaffe@carepointhealth.org": {
             "name": "Asiya Jaffe",
             "bizdev_name": "Jaffe, Asiya",
+            "doctors": ["Sanchez-Pena, Jose R.", "Blokh, Ilya", "Jagdeo, Jared"],
         },
         "amharper@hudsonregionalhospital.com": {
             "name": "Amy Harper",

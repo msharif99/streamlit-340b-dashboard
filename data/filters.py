@@ -39,7 +39,12 @@ def apply_claims_scope(df, user):
 
     if role == "bizdev":
         bizdev_name = user.get("bizdev_name", "")
-        return df[df["Biz Dev Name"].str.lower() == bizdev_name.lower()]
+        mask = df["Biz Dev Name"].str.lower() == bizdev_name.lower()
+        # Also include claims from explicitly assigned doctors (credit override)
+        extra_doctors = [d.lower() for d in user.get("doctors", [])]
+        if extra_doctors and "Prescriber Full Name" in df.columns:
+            mask |= df["Prescriber Full Name"].str.lower().isin(extra_doctors)
+        return df[mask]
 
     if role == "viewer":
         doctor_names = [d.lower() for d in user.get("doctors", [])]
