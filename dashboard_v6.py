@@ -119,6 +119,19 @@ def load_claims():
         df["Biz Dev Name"].fillna("Unknown").astype(str).str.strip()
     )
 
+    # Doctor → Biz Dev credit overrides
+    # Claims from these prescribers are credited to the specified rep
+    # regardless of what the CSV says in the Biz Dev Name column.
+    DOCTOR_BIZDEV_OVERRIDES = {
+        "Sanchez-Pena, Jose R.": "Jaffe, Asiya",
+        "Blokh, Ilya":           "Jaffe, Asiya",
+        "Jagdeo, Jared":         "Jaffe, Asiya",
+    }
+    if "Prescriber Full Name" in df.columns:
+        for doctor, rep in DOCTOR_BIZDEV_OVERRIDES.items():
+            mask = df["Prescriber Full Name"].str.strip() == doctor
+            df.loc[mask, "Biz Dev Name"] = rep
+
     for col in ["Total Price Paid", "WAC Price"]:
         df[col] = (
             df[col].astype(str).str.replace(r"[\$,]", "", regex=True)
