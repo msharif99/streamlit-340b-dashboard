@@ -135,14 +135,14 @@ else:
             "name": "Amy Harper",
             "bizdev_name": "Harper, Amy",
         },
-        "aprilmary.holcomb@hudsonregionalhealth.com": {
-            "name": "Mary Holcomb",
-            "bizdev_name": "Holcomb, Mary",
-        },
-        "megan.callan@carepointhealth.org": {
-            "name": "Megan Callan",
-            "bizdev_name": "Callan, Megan",
-        },
+ #       "aprilmary.holcomb@hudsonregionalhealth.com": {
+ #           "name": "Mary Holcomb",
+ #           "bizdev_name": "Holcomb, Mary",
+ #       },
+ #       "megan.callan@carepointhealth.org": {
+ #           "name": "Megan Callan",
+ #           "bizdev_name": "Callan, Megan",
+ #       },
         "sayeed.shehab@hudsonregionalhealth.com": {
             "name": "Sayeed Shehab",
             "bizdev_name": "Shehab, Sayeed",
